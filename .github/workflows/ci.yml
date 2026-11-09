@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push: [main]
+  pull_request: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Crear .env a partir de .env.example
+        run: cp .env.example .env
+
+      - name: Construir imágenes
+        run: docker compose build
+
+      - name: Levantar servicios
+        run: docker compose up -d
+
+      - name: Prueba de ida y vuelta (guardar y leer un dato)
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5000/health && break
+            sleep 2
+          done
+          curl -sf -X POST http://localhost:5000/clientes \
+            -H "Content-Type: application/json" \
+            -d '{"identificacion":"1033650666","nombre":"Pedro","apellidos":"Perez"}'
+          curl -sf http://localhost:5000/clientes | grep "hola desde CI"
+
+      - name: Mostrar logs si falla
+        if: failure()
+        run: docker compose logs
+
+      - name: Apagar
+        if: always()
+        run: docker compose down -v
