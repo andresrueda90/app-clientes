@@ -1,8 +1,10 @@
 name: CI
 
 on:
-  push: [main]
-  pull_request: [main]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
@@ -11,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Crear .env a partir de .env.example
+      - name: Creacion variables de entorno
         run: cp .env.example .env
 
       - name: Construir imágenes
@@ -20,7 +22,7 @@ jobs:
       - name: Levantar servicios
         run: docker compose up -d
 
-      - name: Prueba de ida y vuelta (guardar y leer un dato)
+      - name: Prueba de Status
         run: |
           for i in $(seq 1 30); do
             curl -sf http://localhost:5000/health && break
@@ -29,7 +31,7 @@ jobs:
           curl -sf -X POST http://localhost:5000/clientes \
             -H "Content-Type: application/json" \
             -d '{"identificacion":"1033650666","nombre":"Pedro","apellidos":"Perez"}'
-          curl -sf http://localhost:5000/clientes | grep "hola desde CI"
+          curl -sf http://localhost:5000/clientes | grep "Pedro"
 
       - name: Mostrar logs si falla
         if: failure()
