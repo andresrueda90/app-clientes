@@ -1,0 +1,41 @@
+services:
+  db:
+    build: ./db
+    container_name: clientes_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - datos_db:/var/lib/postgresql/data
+    networks:
+      - red_app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: ./app
+    container_name: clientes_app
+    environment:
+      DB_HOST: db 
+      DB_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red_app
+
+networks:
+  red_app:
+    driver: bridge
+
+volumes:
+  datos_db:
